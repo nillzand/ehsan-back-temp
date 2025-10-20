@@ -14,7 +14,6 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS_str = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_str.split(',') if host.strip()]
 
-
 # ==================== Installed Apps ====================
 INSTALLED_APPS = [
     # Django default apps
@@ -77,12 +76,9 @@ TEMPLATES = [
 ]
 
 # ==================== Database ====================
-# This section is now configured to read from environment variables for production.
 DATABASES = {
     'default': dj_database_url.config(
-        # Fallback to a local SQLite database for development
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        # Enable persistent connections
         conn_max_age=600
     )
 }
@@ -96,7 +92,7 @@ LOGOUT_REDIRECT_URL = '/'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication', # Recommended for browsable API
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -113,25 +109,19 @@ SIMPLE_JWT = {
 }
 
 # ==================== CORS Configuration ====================
-# Read allowed origins from a comma-separated environment variable.
-CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CORS_ALLOWED_ORIGINS_str = os.environ.get(
+    'CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173'
+)
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
-
-# Allows cookies to be sent with cross-origin requests, which is necessary
-# for features like session-based login to the browsable API or admin panel.
 CORS_ALLOW_CREDENTIALS = True
 
-
 # ==================== CSRF Configuration ====================
-# Read trusted origins from a comma-separated environment variable.
-# This is crucial for allowing state-changing requests (POST, PUT, DELETE)
-# from your frontend domain when using session-based authentication.
-CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CSRF_TRUSTED_ORIGINS_str = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173'
+)
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
 
-
 # --- PRODUCTION SECURITY SETTINGS ---
-# These settings enhance security when DEBUG is False.
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
@@ -140,7 +130,6 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
 
 # ==================== Static & Media ====================
 STATIC_URL = '/staticfiles/'
