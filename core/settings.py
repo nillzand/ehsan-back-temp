@@ -92,20 +92,11 @@ AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = '/admin/'
 LOGOUT_REDIRECT_URL = '/'
 
-# --- PRODUCTION SECURITY SETTINGS ---
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = False
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-
 # ==================== REST Framework ====================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication', # Recommended for browsable API
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -121,12 +112,35 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-# ==================== CORS ====================
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://ehsan-backend.darkube.app" # Add your frontend domain
-]
+# ==================== CORS Configuration ====================
+# Read allowed origins from a comma-separated environment variable.
+CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
+
+# Allows cookies to be sent with cross-origin requests, which is necessary
+# for features like session-based login to the browsable API or admin panel.
+CORS_ALLOW_CREDENTIALS = True
+
+
+# ==================== CSRF Configuration ====================
+# Read trusted origins from a comma-separated environment variable.
+# This is crucial for allowing state-changing requests (POST, PUT, DELETE)
+# from your frontend domain when using session-based authentication.
+CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
+
+
+# --- PRODUCTION SECURITY SETTINGS ---
+# These settings enhance security when DEBUG is False.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 # ==================== Static & Media ====================
 STATIC_URL = '/staticfiles/'
@@ -145,9 +159,5 @@ LOCALE_PATHS = [BASE_DIR / 'locale']
 # ==================== Default Primary Key Field ====================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==================== Custom Settings ====================
+# ==================== Custom Application Settings ====================
 RESERVATION_LEAD_DAYS = 2
-CSRF_TRUSTED_ORIGINS = [
-    'https://ehsan-backend.darkube.app',
-    'http://ehsan-backend.darkube.app',
-]
