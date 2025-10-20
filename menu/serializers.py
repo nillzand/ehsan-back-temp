@@ -1,0 +1,25 @@
+from rest_framework import serializers
+from .models import FoodCategory, FoodItem, SideDish
+
+class FoodCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FoodCategory
+        fields = ['id', 'name', 'description']
+
+class FoodItemSerializer(serializers.ModelSerializer):
+    # Display the category name instead of its ID for better readability
+    category_name = serializers.CharField(source='category.name', read_only=True)
+
+    class Meta:
+        model = FoodItem
+        fields = [
+            'id', 'name', 'description', 'price', 'image', 'is_available',
+            'category', 'category_name', 'created_at'
+        ]
+        # 'category' is write-only, 'category_name' is read-only
+        extra_kwargs = {'category': {'write_only': True}}
+
+class SideDishSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SideDish
+        fields = ['id', 'name', 'description', 'price', 'is_available']

@@ -1,0 +1,29 @@
+# Base Django framework
+django
+
+# For building REST APIs
+djangorestframework
+
+# For JWT (JSON Web Token) authentication
+djangorestframework-simplejwt
+
+# For handling Cross-Origin Resource Sharing (CORS)
+django-cors-headers
+
+# For advanced filtering in API views
+django-filter
+
+# Production-ready WSGI server used in the Dockerfile
+gunicorn
+
+# PostgreSQL database adapter for production environment
+psycopg2-binary
+
+# To generate fake data for seeding the database
+Faker
+
+Pillow
+
+whitenoise[brotli]
+# For parsing database URLs
+dj-database-url
