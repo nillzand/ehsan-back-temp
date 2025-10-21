@@ -10,13 +10,10 @@ class FoodCategorySerializer(serializers.ModelSerializer):
 class FoodItemSerializer(serializers.ModelSerializer):
     """
     Serializer for the FoodItem model.
-    [MODIFIED] The image field is now explicitly optional to allow for PATCH updates without a new file.
+    [FINAL FIX] The 'write_only' constraint on 'category' has been removed to fix PATCH updates.
     """
     category_name = serializers.CharField(source='category.name', read_only=True)
-    
-    # [MODIFIED] Make the image field optional for updates.
-    # This allows PATCH requests to modify other fields without needing to re-upload the image.
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = serializers.ImageField(required=False, allow_null=True, use_url=True)
 
     class Meta:
         model = FoodItem
@@ -24,9 +21,9 @@ class FoodItemSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'price', 'image', 'is_available',
             'category', 'category_name', 'created_at'
         ]
-        # 'category' is write-only, 'category_name' is read-only
+        # [MODIFIED] The problematic 'write_only' setting for the category is REMOVED.
+        # This allows the serializer to correctly handle both POST and PATCH requests for the category field.
         extra_kwargs = {
-
             'created_at': {'read_only': True},
         }
 
