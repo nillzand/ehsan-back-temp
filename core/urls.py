@@ -35,8 +35,10 @@ urlpatterns = [
     path('api/orders/', include('orders.urls')),
 ]
 
-# Serve media files in development only
-# Serve static and media files in development only
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# [FIXED] Serve static and media files in both development and production.
+# In production (DEBUG=False), Django doesn't serve these files itself.
+# However, these URL patterns are needed so that Whitenoise can recognize
+# requests for these files and serve them from STATIC_ROOT and MEDIA_ROOT.
+# The `if settings.DEBUG:` check has been removed.
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
