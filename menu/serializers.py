@@ -26,8 +26,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
         ]
         # 'category' is write-only, 'category_name' is read-only
         extra_kwargs = {
-            'category': {'write_only': True},
-            # Make these fields read-only as they are set automatically
+
             'created_at': {'read_only': True},
         }
 
