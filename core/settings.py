@@ -1,6 +1,10 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+from dotenv import load_dotenv 
+
+load_dotenv()
+
 
 # ==================== Base Path ====================
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,9 +48,10 @@ INSTALLED_APPS = [
 # ==================== Middleware ====================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # [FIX] CorsMiddleware MUST be placed high up.
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -133,10 +138,19 @@ SIMPLE_JWT = {
 }
 
 # ==================== CORS ====================
-# Get the comma-separated string from the environment
-CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
-# Split the string into a list of origins
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
+# [DEBUG STEP] Hardcode the allowed origins to eliminate environment variable issues.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# We also need to trust these origins for CSRF tokens on POST requests etc.
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# For debugging, we can also temporarily allow all origins, but the above is better.
+# CORS_ALLOW_ALL_ORIGINS = True
+
 
 # ==================== Static & Media ====================
 STATIC_URL = '/staticfiles/'
@@ -158,10 +172,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==================== Custom Settings ====================
 RESERVATION_LEAD_DAYS = 2
 
-# Get the comma-separated string from the environment
-CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000')
-# Split the string into a list of origins
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
+# This is now handled in the CORS section above.
+# CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
+# CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
 
 
 

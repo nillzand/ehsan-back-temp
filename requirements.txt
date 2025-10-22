@@ -28,5 +28,9 @@ whitenoise[brotli]
 # For parsing database URLs
 dj-database-url
 
+python-dotenv
 
 django-cors-headers
+
+
+

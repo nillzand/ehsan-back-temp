@@ -47,7 +47,7 @@ class MyCompanyWalletView(generics.RetrieveAPIView):
         serializer = self.get_serializer(wallet)
 
         # Paginate transactions
-        transactions_qs = wallet.transactions.all().order_by('-created_at')
+        transactions_qs = wallet.transactions.all().order_by('-timestamp')
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(transactions_qs, request)
         transactions_serializer = TransactionSerializer(page, many=True)

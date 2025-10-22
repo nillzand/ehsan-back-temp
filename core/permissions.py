@@ -20,6 +20,13 @@ class IsSuperAdmin(BasePermission):
     def has_permission(self, request, view):
         return is_authenticated_user(request.user) and request.user.role == User.Role.SUPER_ADMIN
 
+class IsAdmin(BasePermission):
+    """
+    Allows access only to users with 'SUPER_ADMIN' or 'COMPANY_ADMIN' roles.
+    """
+    def has_permission(self, request, view):
+        return is_authenticated_user(request.user) and request.user.role in [User.Role.SUPER_ADMIN, User.Role.COMPANY_ADMIN]
+
 
 class IsCompanyAdmin(BasePermission):
     """
