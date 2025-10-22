@@ -1,4 +1,4 @@
-# core/management/commands/seed_data.py
+# back/core/management/commands/seed_data.py
 
 import random
 from datetime import timedelta
@@ -194,6 +194,11 @@ class Command(BaseCommand):
             end_date=(today.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1),
             is_active=True
         )
+        
+        # [FIX] This was the missing critical step:
+        # Assign the newly created schedule as the active one for the company.
+        company.active_schedule = schedule
+        company.save()
 
         current_date = schedule.start_date
         while current_date <= schedule.end_date:

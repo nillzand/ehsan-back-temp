@@ -20,8 +20,7 @@ class WalletInline(admin.StackedInline):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    # [MODIFIED] Update list_display to include a custom method for showing the balance
-    list_display = ('name', 'get_wallet_balance')
+    list_display = ('name', 'get_wallet_balance', 'active_schedule')
     search_fields = ('name',)
     # [NEW] Add the WalletInline to the company admin page
     inlines = (WalletInline,)

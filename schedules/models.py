@@ -1,12 +1,17 @@
+# back/schedules/models.py
 from django.db import models
 from django.core.exceptions import ValidationError
 
 class Schedule(models.Model):
     name = models.CharField(max_length=255)
+    # [تغییر] فیلد شرکت را اختیاری می‌کنیم
     company = models.ForeignKey(
         'companies.Company',
         on_delete=models.CASCADE,
-        related_name='schedules'
+        related_name='schedules',
+        null=True,  # اجازه می‌دهد این فیلد خالی باشد
+        blank=True, # در فرم‌های ادمین هم اختیاری می‌شود
+        verbose_name="شرکت (در صورت اختصاصی بودن)"
     )
     start_date = models.DateField()
     end_date = models.DateField()
@@ -18,8 +23,12 @@ class Schedule(models.Model):
             raise ValidationError("End date cannot be before the start date.")
 
     def __str__(self):
-        return f"{self.name} ({self.company.name})"
+        # [تغییر] نمایش نام برنامه به شکل خواناتر
+        if self.company:
+            return f"{self.name} ({self.company.name})"
+        return f"{self.name} (منوی پیش‌فرض)"
 
+# ... مدل DailyMenu بدون تغییر باقی می‌ماند ...
 class DailyMenu(models.Model):
     schedule = models.ForeignKey(
         Schedule,

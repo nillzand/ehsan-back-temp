@@ -1,32 +1,40 @@
+# back/schedules/views_user.py
 from rest_framework import generics, permissions
-from rest_framework.response import Response
 from .models import Schedule
 from .serializers import ScheduleSerializer
-from django.utils import timezone
+from users.models import User # <-- Import User model
 
 class MyCompanyMenuView(generics.ListAPIView):
-    """
-    A read-only endpoint that returns the active schedule(s)
-    for the currently authenticated user's company.
-    """
     serializer_class = ScheduleSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if not user.company:
-            return Schedule.objects.none() # Return empty if user has no company
 
-        today = timezone.now().date()
+        # ادمین کل همه برنامه‌ها را برای مدیریت می‌بیند
+        if user.is_superuser or user.role == User.Role.SUPER_ADMIN:
+            return Schedule.objects.prefetch_related(
+                'daily_menus__available_foods',
+                'daily_menus__available_sides'
+            ).select_related('company').order_by('company__name', 'name')
+            
+        active_schedule = None
+        if user.company:
+            # 1. اولویت با برنامه‌ی اختصاصی شرکت است
+            if user.company.active_schedule:
+                active_schedule = user.company.active_schedule
         
-        # Find active schedules for the user's company that are currently ongoing
-        queryset = Schedule.objects.filter(
-            company=user.company,
-            is_active=True,
-            start_date__lte=today,
-            end_date__gte=today
-        ).prefetch_related(
-            'daily_menus__available_foods',
-            'daily_menus__available_sides'
-        )
-        return queryset
+        # 2. اگر برنامه اختصاصی نبود، به دنبال برنامه پیش‌فرض فعال بگرد
+        if not active_schedule:
+            default_schedule = Schedule.objects.filter(company__isnull=True, is_active=True).first()
+            active_schedule = default_schedule
+            
+        # اگر برنامه‌ای (اختصاصی یا پیش‌فرض) پیدا شد، آن را برگردان
+        if active_schedule:
+            return Schedule.objects.filter(pk=active_schedule.pk).prefetch_related(
+                'daily_menus__available_foods',
+                'daily_menus__available_sides'
+            )
+        
+        # در غیر این صورت، لیست خالی برگردان
+        return Schedule.objects.none()

@@ -9,13 +9,14 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
-from collections import defaultdict # [NEW] Import defaultdict for easier processing
+from collections import defaultdict
 
 from .models import Order
 from users.models import User
 from companies.models import Company
 from menu.models import FoodItem
-from core.permissions import IsSuperAdmin 
+# [اصلاح] کلاس دسترسی IsAdmin برای استفاده در داشبورد اضافه شد
+from core.permissions import IsSuperAdmin, IsAdmin 
 from .serializers import OrderReadSerializer
 
 
@@ -49,7 +50,6 @@ class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
 class DailyOrderSummaryView(APIView):
     permission_classes = [IsSuperAdmin]
     def get(self, request, *args, **kwargs):
-        # This view is unchanged but included for completeness
         query_date_str = request.query_params.get('date', timezone.now().strftime('%Y-%m-%d'))
         try:
             query_date = timezone.datetime.strptime(query_date_str, '%Y-%m-%d').date()
@@ -62,13 +62,29 @@ class DailyOrderSummaryView(APIView):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [IsSuperAdmin]
+    # [اصلاح کلیدی] سطح دسترسی به IsAdmin تغییر یافت تا ادمین شرکت نیز دسترسی داشته باشد
+    permission_classes = [IsAdmin]
+    
     def get(self, request, *args, **kwargs):
-        # This view is unchanged but included for completeness
         today = timezone.now().date()
-        orders_today = Order.objects.filter(daily_menu__date=today).count()
-        pending_orders = Order.objects.filter(status__in=['PLACED', 'CONFIRMED']).count()
-        top_foods = FoodItem.objects.annotate(order_count=Count('orders')).order_by('-order_count')[:5]
+        user = request.user
+        
+        # [اصلاح] آمار بر اساس نقش کاربر فیلتر می‌شود
+        # اگر کاربر ادمین کل نباشد، آمار فقط برای شرکت خودش نمایش داده می‌شود
+        base_queryset = Order.objects.all()
+        if user.role == User.Role.COMPANY_ADMIN:
+            base_queryset = base_queryset.filter(user__company=user.company)
+
+        orders_today = base_queryset.filter(daily_menu__date=today).count()
+        pending_orders = base_queryset.filter(status__in=['PLACED', 'CONFIRMED']).count()
+        
+        # فیلتر کردن غذاهای محبوب بر اساس شرکت (در صورت نیاز)
+        top_foods_qs = FoodItem.objects
+        if user.role == User.Role.COMPANY_ADMIN:
+            top_foods_qs = top_foods_qs.filter(orders__user__company=user.company)
+            
+        top_foods = top_foods_qs.annotate(order_count=Count('orders')).order_by('-order_count')[:5]
+        
         top_foods_data = [{'name': f.name, 'count': f.order_count} for f in top_foods]
         stats = {'orders_today': orders_today, 'pending_orders_total': pending_orders, 'top_5_foods': top_foods_data}
         return Response(stats)
@@ -113,7 +129,6 @@ class AdminReportsView(APIView):
             orders_today_qs = orders_today_qs.filter(user__company_id=company_id)
         
         total_sales_today = Decimal('0.0')
-        # Eager load related items to prevent many small queries
         for order in orders_today_qs.select_related('food_item').prefetch_related('side_dishes'):
             if order.food_item:
                 total_sales_today += order.food_item.price
