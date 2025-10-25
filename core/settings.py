@@ -94,16 +94,36 @@ LOGOUT_REDIRECT_URL = '/'
 
 
 # ==================== Database ====================
-# [CONFIGURED] Flexible database configuration
+# Option 1: Try to build the database URL from individual environment variables (Ideal for Darkube)
+DB_HOST = os.environ.get('DB_HOST')
+DB_NAME = os.environ.get('DB_NAME')
+DB_USER = os.environ.get('DB_USER')
+DB_PASS = os.environ.get('DB_PASS')
+DB_PORT = os.environ.get('DB_PORT')
+
+# Option 2: Check for a single DATABASE_URL variable
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
+# Logic to choose the database configuration
+if DB_HOST and DB_NAME and DB_USER and DB_PASS and DB_PORT:
+    print("Connecting to PostgreSQL via individual DB environment variables.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASS,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+        }
+    }
+elif DATABASE_URL:
     print("Connecting to PostgreSQL database via DATABASE_URL.")
     DATABASES = {
         'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600, ssl_require=False)
     }
 else:
-    print("DATABASE_URL not found. Falling back to SQLite for local development.")
+    print("No production database environment variables found. Falling back to SQLite for local development.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
