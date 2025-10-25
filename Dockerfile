@@ -1,50 +1,50 @@
-# --- Stage 1: Build Stage ---
-# Use a temporary image to install dependencies.
-FROM python:3.11-slim AS builder
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set the working directory
-WORKDIR /app
-
-# Install build-time dependencies if any (e.g., for compiling C extensions)
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc
-
-# Copy and install Python dependencies
-COPY requirements.txt .
-RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
-
-
-# --- Stage 2: Final Production Image ---
-# Start from a clean, slim base image again.
+# --- Base Image ---
+# Use an official Python runtime as a parent image.
+# 'slim' is a good choice for smaller image size.
 FROM python:3.11-slim
 
-# Create a non-root user to run the application for security
+# --- Environment Variables ---
+# Prevents Python from writing .pyc files to disc.
+ENV PYTHONDONTWRITEBYTECODE 1
+# Ensures that Python output is sent straight to the terminal without buffering.
+ENV PYTHONUNBUFFERED 1
+
+# --- Create a non-root user ---
+# [NEW] Create a dedicated group and user to run the application
 RUN addgroup --system app && adduser --system --group app
 
-# Set the working directory
+# --- Application Directory & Permissions ---
+# Set the working directory in the container.
 WORKDIR /app
+# [NEW] Set ownership of the app directory to the new user
+RUN chown app:app /app
 
-# Copy the installed Python packages from the builder stage
-COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* && \
-    rm -rf /wheels
+# --- Install Dependencies ---
+# Copy the requirements file into the container.
+COPY requirements.txt .
+# Install the dependencies.
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code into the container
-# This will be efficient because of the .dockerignore file
-COPY . .
-
-# Set ownership of the application directory to the non-root user
-RUN chown -R app:app /app
-
-# Switch to the non-root user
+# --- Switch to the non-root user ---
+# [NEW] From now on, all subsequent commands will run as 'appuser'
 USER app
 
-# Expose the port the app will run on
+# --- Copy Application Code ---
+# Copy the rest of the application's code into the container.
+COPY . .
+
+# --- Expose Port ---
+# Expose the port Gunicorn will run on.
 EXPOSE 8000
 
-# The CMD is now much simpler.
-# We let the hosting platform (like Darkube) handle collectstatic and migrations.
+# --- Collect Static Files ---
+# This will be run when the image is built.
+# NOTE: This command is now run by the 'app' user.
+# Ensure 'staticfiles' directory is writable by this user if it's created manually.
+# Django's collectstatic creates the directory itself, so this should be fine.
+RUN python manage.py collectstatic --noinput
+
+# --- Command to Run ---
+# Run Gunicorn.
+# The number of workers is a good starting point. Adjust based on your server's CPU cores.
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "core.wsgi:application"]
