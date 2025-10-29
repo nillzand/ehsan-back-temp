@@ -1,0 +1,90 @@
+# ===============================================
+# Environment Files
+# Contains secrets and machine-specific settings. DO NOT COMMIT.
+# ===============================================
+.env
+.env.*
+
+
+# ===============================================
+# Django / Python Specific
+# ===============================================
+# Python virtual environment folder
+venv/
+env/
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+# ===============================================
+# Database
+# ===============================================
+# Local development database
+db.sqlite3
+db.sqlite3-journal
+
+
+# ===============================================
+# Static and Media Files (from your settings.py)
+# ===============================================
+# User-uploaded files (MEDIA_ROOT)
+/mediafiles/
+
+# Collected static files for deployment (STATIC_ROOT)
+/staticfiles/
+
+
+# ===============================================
+# IDE / Editor Configuration
+# ===============================================
+# Visual Studio Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+
+# ===============================================
+# Operating System Files
+# ===============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# ===============================================
+# Log and Coverage Files
+# ===============================================
+# Log files
+*.log
+logs/
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+
+
+# ===============================================
+# Build artifacts
+# ===============================================
+build/
+dist/
+*.egg-info/
