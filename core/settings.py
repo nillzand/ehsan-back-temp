@@ -216,6 +216,7 @@ LOGGING = {
     },
 }
 
+
 # ==================== DEBUGGING CODE ====================
 print("--- [CORS DEBUG] ---")
 cors_env_var = os.environ.get('CORS_ALLOWED_ORIGINS')
