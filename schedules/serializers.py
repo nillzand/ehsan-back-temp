@@ -40,4 +40,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'company', 'company_name', 'start_date', 'end_date', 'is_active', 'daily_menus'
         ]
-        extra_kwargs = {'company': {'write_only': True}}
+         extra_kwargs = {
+            'company': {'required': False, 'allow_null': True, 'write_only': True}
+        }
