@@ -20,13 +20,13 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     Only admins can create or modify schedules.
     """
     queryset = Schedule.objects.prefetch_related(
-        'daily_menus__available_foods',
+        'daily_menus__available_foods__category', # <-- این خط بسیار مهم است
         'daily_menus__available_sides'
     ).select_related('company').all()
+    
     serializer_class = ScheduleSerializer
     permission_classes = [IsSuperAdminOrReadOnly]
 
-    
     def get_serializer_context(self):
         """
         Ensures the request object is passed to the serializer context,
@@ -35,7 +35,6 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
-
 
 class DailyMenuViewSet(viewsets.ModelViewSet):
     """
