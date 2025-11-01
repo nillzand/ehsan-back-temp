@@ -53,9 +53,7 @@ INSTALLED_APPS = [
 # ==================== Middleware ====================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Place CorsMiddleware as high as possible
     'corsheaders.middleware.CorsMiddleware',
-    # Whitenoise for serving static files
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -217,3 +215,11 @@ LOGGING = {
         'level': 'INFO',  
     },
 }
+
+# ==================== DEBUGGING CODE ====================
+print("--- [CORS DEBUG] ---")
+cors_env_var = os.environ.get('CORS_ALLOWED_ORIGINS')
+print(f"[*] Value from ENV VAR 'CORS_ALLOWED_ORIGINS': {cors_env_var}")
+print(f"[*] Final calculated 'CORS_ALLOWED_ORIGINS' list: {CORS_ALLOWED_ORIGINS}")
+print(f"[*] Middleware list: {[m.split('.')[-1] for m in MIDDLEWARE]}")
+print("--- [END CORS DEBUG] ---")
