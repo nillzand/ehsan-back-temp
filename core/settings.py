@@ -163,11 +163,11 @@ SIMPLE_JWT = {
 
 # ==================== CORS ====================
 # [CONFIGURED] Read CORS allowed origins from environment variable
-CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173','https://ehsan-restaurant.nilva.ai', 'https://ehsan-front-temp.darkube.app',)
+CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173','https://ehsan-restaurant.nilva.ai', 'https://ehsan-front-temp.darkube.app')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
 
 # [CONFIGURED] Read CSRF trusted origins from environment variable
-CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173', 'https://ehsan-restaurant.nilva.ai', 'https://ehsan-front-temp.darkube.app',)
+CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173', 'https://ehsan-restaurant.nilva.ai', 'https://ehsan-front-temp.darkube.app')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
 
 # [FIX] REMOVE THIS LINE - It conflicts with sending credentials
