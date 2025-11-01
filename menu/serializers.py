@@ -15,14 +15,14 @@ class FoodItemSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     
     image = serializers.ImageField(write_only=True, required=False, allow_null=True)
-    image_url = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField() # این خط باقی می‌ماند
 
     class Meta:
         model = FoodItem
         fields = [
             'id', 'name', 'description', 'price', 'is_available',
             'image',
-            'image_url',
+            'image_url', # این فیلد مهم است
             'category',
             'category_name',
             'created_at'
@@ -32,14 +32,15 @@ class FoodItemSerializer(serializers.ModelSerializer):
             'is_available': {'required': False}
         }
 
+    # [اصلاح کلیدی] این متد آدرس کامل تصویر را با پروتکل صحیح تولید می‌کند
     def get_image_url(self, obj):
         request = self.context.get('request')
         if obj.image and request:
+            # build_absolute_uri به صورت هوشمند از http یا https استفاده می‌کند
             return request.build_absolute_uri(obj.image.url)
         return None
 
 class SideDishSerializer(serializers.ModelSerializer):
     class Meta:
         model = SideDish
-        # [FIX] حرف 's' اضافی از انتهای این خط حذف شد
         fields = ['id', 'name', 'description', 'price', 'is_available']
