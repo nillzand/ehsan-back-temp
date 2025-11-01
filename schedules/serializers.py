@@ -32,7 +32,7 @@ class DailyMenuReadSerializer(serializers.ModelSerializer):
 # --- Serializer for Schedule ---
 
 class ScheduleSerializer(serializers.ModelSerializer):
-    company_name = serializers.CharField(source='company.name', read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     daily_menus = DailyMenuReadSerializer(many=True, read_only=True)
 
     class Meta:

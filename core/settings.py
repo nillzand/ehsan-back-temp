@@ -134,7 +134,7 @@ else:
 
 # --- PRODUCTION SECURITY SETTINGS ---
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_PROXY_SSL_HEADER  = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = False # Set to True if your proxy handles SSL termination
@@ -170,8 +170,9 @@ CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.sp
 CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
 
-# temp - delete later
-CORS_ALLOW_ALL_ORIGINS=True
+# [FIX] REMOVE THIS LINE - It conflicts with sending credentials
+# CORS_ALLOW_ALL_ORIGINS=True 
+
 CORS_ALLOW_CREDENTIALS=True
 
 # ==================== Static & Media ====================
