@@ -40,7 +40,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         company = user.company if hasattr(user, 'company') and user.company else None
         
-        # [اصلاح کلیدی ۱] کد تخفیف را از داده‌های معتبر شده سریالایزر استخراج می‌کنیم
+        # کد تخفیف را از داده‌های معتبر شده سریالایزر استخراج می‌کنیم
         discount_code_str = serializer.validated_data.pop('discount_code', None)
 
         # تمام عملیات زیر در یک تراکنش دیتابیس انجام می‌شود تا از بروز خطا جلوگیری شود
@@ -48,7 +48,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             # سفارش را با کاربر فعلی ذخیره می‌کنیم
             order = serializer.save(user=user)
 
-            # [اصلاح کلیدی ۲] اگر کد تخفیفی ارسال شده بود، آن را پردازش می‌کنیم
+            # اگر کد تخفیفی ارسال شده بود، آن را پردازش می‌کنیم
             if discount_code_str:
                 try:
                     # کد تخفیف فعال را در دیتابیس پیدا می‌کنیم
@@ -65,8 +65,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     # اگر کد وجود نداشت یا فعال نبود، به سادگی از آن عبور می‌کنیم
                     pass
 
-            # [اصلاح کلیدی ۳] حالا متد محاسبه قیمت را فراخوانی می‌کنیم
-            # این متد به دلیل وجود `discount_usage` که در بالا ایجاد شد، تخفیف را محاسبه خواهد کرد
+            # حالا متد محاسبه قیمت را فراخوانی می‌کنیم
             order.calculate_and_save_prices()
             
             # منطق کسر از بودجه برای شرکت‌هایی با مدل پرداخت آنلاین
@@ -94,10 +93,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     
     def perform_update(self, serializer):
         # این بخش برای ویرایش سفارش است که در حال حاضر پیاده‌سازی نشده است
-        # و نیاز به منطق مشابه برای بازگرداندن بودجه و ... دارد.
         super().perform_update(serializer)
 
     def perform_destroy(self, instance):
-        # این بخش برای لغو سفارش است. باید منطق بازگرداندن بودجه
-        # و حذف رکورد استفاده از کد تخفیف در اینجا اضافه شود.
+        # این بخش برای لغو سفارش است. باید منطق بازگرداندن بودجه در اینجا اضافه شود
         super().perform_destroy(instance)

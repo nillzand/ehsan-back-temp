@@ -11,17 +11,36 @@ from companies.models import Company
 class OrderWriteSerializer(serializers.ModelSerializer):
     daily_menu = serializers.PrimaryKeyRelatedField(queryset=DailyMenu.objects.all())
     quantity = serializers.IntegerField(min_value=1, default=1, required=False)
-    # [اصلاح کلیدی] فیلد کد تخفیف را اینجا اضافه می‌کنیم
     discount_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = Order
-        # [اصلاح کلیدی] فیلد جدید را به لیست اضافه می‌کنیم
         fields = ['id', 'daily_menu', 'food_item', 'side_dishes', 'quantity', 'discount_code']
         read_only_fields = ['id']
     
     def validate(self, data):
-        # ... (منطق validate مثل قبل) ...
+        """
+        [اصلاح کلیدی] منطق اعتبارسنجی که حذف شده بود، در اینجا کامل می‌شود.
+        """
+        daily_menu = data['daily_menu']
+        food_item = data['food_item']
+        side_dishes = data.get('side_dishes', [])
+        user = self.context['request'].user
+
+        # بررسی اینکه آیا کاربر به منوی این شرکت دسترسی دارد یا خیر
+        schedule_company = daily_menu.schedule.company
+        if schedule_company is not None and user.company != schedule_company:
+            raise serializers.ValidationError("You can only order from your own company's menu.")
+
+        # بررسی اینکه آیا غذای انتخاب شده در منوی آن روز موجود است یا خیر
+        if food_item not in daily_menu.available_foods.all():
+            raise serializers.ValidationError(f"Food item '{food_item.name}' is not available on this date.")
+
+        # بررسی اینکه آیا کنارغذاهای انتخاب شده در منوی آن روز موجود هستند یا خیر
+        for side in side_dishes:
+            if side not in daily_menu.available_sides.all():
+                raise serializers.ValidationError(f"Side dish '{side.name}' is not available on this date.")
+        
         return data
 
 class OrderReadSerializer(serializers.ModelSerializer):
