@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-secret-key-for-dev')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# [اصلاح ۱] اطمینان از وجود دامنه‌های پروداکشن
+# [اصلاح ۱] دامنه بک‌اند خود را به این لیست اضافه می‌کنیم
 ALLOWED_HOSTS_str = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,ehsan-back-temp.darkube.app')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_str.split(',') if host.strip()]
 
@@ -76,13 +76,18 @@ REST_FRAMEWORK = {
 }
 SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), 'REFRESH_TOKEN_LIFETIME': timedelta(days=1),}
 
-# [اصلاح ۲] اطمینان از وجود دامنه‌های پروداکشن
+# ==================== CORS ====================
+# [اصلاح ۲] اطمینان از وجود دامنه‌های پروداکشن با https
 CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://ehsan-restaurant.nilva.ai,https://ehsan-front-temp.darkube.app')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
+
+# [اصلاح ۳] اطمینان از وجود دامنه‌های پروداکشن با https
 CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://ehsan-restaurant.nilva.ai,https://ehsan-front-temp.darkube.app')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
+
 CORS_ALLOW_CREDENTIALS=True
 
+# ==================== Static & Media ====================
 STATIC_URL = '/staticfiles/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
