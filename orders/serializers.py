@@ -62,9 +62,10 @@ class OrderReadSerializer(serializers.ModelSerializer):
         return obj.daily_menu.date if obj.daily_menu else None
 
     def get_company(self, obj):
+        # [FIX] Ensure this method ALWAYS returns a string to prevent frontend errors.
         if obj.user and obj.user.company:
             return obj.user.company.name
-        return None
+        return "" # بازگرداندن رشته خالی به جای None
 
     def get_user(self, obj):
         if obj.user:
