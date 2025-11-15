@@ -1,3 +1,4 @@
+# core/permissions.py
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -72,23 +73,37 @@ class IsCompanyAdminOfTargetUser(BasePermission):
     و به همان شرکتی تعلق داشته باشد که کاربر هدف (مشخص شده در URL) به آن تعلق دارد.
     """
     def has_permission(self, request, view):
-        # اطمینان از اینکه کاربر لاگین کرده و ادمین شرکت است
         if not (is_authenticated_user(request.user) and request.user.role == User.Role.COMPANY_ADMIN):
             return False
 
-        # گرفتن آی‌دی کاربری که قرار است عملیاتی روی آن انجام شود از URL
         target_user_id = view.kwargs.get('user_id')
         if not target_user_id:
             return False
 
         try:
-            # پیدا کردن کاربر هدف در دیتابیس
-            target_user = get_object_or_404(User, pk=int(target_user_id))
+            # [اصلاح] تابع int() اضافی حذف شد
+            target_user = get_object_or_404(User, pk=target_user_id)
         except (ValueError, User.DoesNotExist):
             return False
 
-        # بررسی اینکه آیا شرکت ادمین با شرکت کارمند هدف یکی است یا خیر
         return request.user.company == target_user.company
+
+
+class CanUserAccessWallet(BasePermission):
+    """
+    بررسی می‌کند که آیا در تنظیمات شرکت کاربر، دسترسی به کیف پول (`user_has_wallet_access`)
+    فعال شده است یا خیر.
+    """
+    message = "شما اجازه دسترسی به این قابلیت را ندارید."
+
+    def has_permission(self, request, view):
+        if not request.user.role == User.Role.EMPLOYEE:
+            return True
+
+        if not request.user.company or not hasattr(request.user.company, 'config'):
+            return False
+        
+        return request.user.company.config.user_has_wallet_access
 
 
 class CanModifyOrder(BasePermission):
@@ -99,11 +114,9 @@ class CanModifyOrder(BasePermission):
     message = f"سفارش‌ها را نمی‌توان در فاصله کمتر از {settings.RESERVATION_LEAD_DAYS} روز تا تاریخ تحویل، تغییر داد یا لغو کرد."
 
     def has_object_permission(self, request, view, obj):
-        # عملیات فقط خواندنی (GET, HEAD, OPTIONS) همیشه مجاز است.
         if request.method in SAFE_METHODS:
             return True
 
-        # برای عملیات نوشتن، تاریخ را بررسی کن.
         today = timezone.now().date()
         days_until_reservation = (obj.daily_menu.date - today).days
         return days_until_reservation >= settings.RESERVATION_LEAD_DAYS

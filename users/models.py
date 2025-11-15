@@ -9,9 +9,9 @@ class User(AbstractUser):
     """
 
     class Role(models.TextChoices):
-        SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"        # Catering company admin
-        COMPANY_ADMIN = "COMPANY_ADMIN", "Company Admin"  # Client company admin
-        EMPLOYEE = "EMPLOYEE", "Employee"                 # Client company employee
+        SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
+        COMPANY_ADMIN = "COMPANY_ADMIN", "Company Admin"
+        EMPLOYEE = "EMPLOYEE", "Employee"
 
     # Optional company reference for employees/admins
     company = models.ForeignKey(
@@ -36,6 +36,15 @@ class User(AbstractUser):
         default=Decimal('0.00'),
         help_text="The current meal budget allocated to this user."
     )
+
+    # --- [ADD THIS FIELD] ---
+    image = models.ImageField(
+        upload_to='user_avatars/', 
+        null=True, 
+        blank=True,
+        verbose_name="تصویر پروفایل"
+    )
+    # -------------------------
 
     def __str__(self):
         return self.username

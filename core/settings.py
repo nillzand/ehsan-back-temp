@@ -16,9 +16,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-secret-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
+# vvvvvv [دیباگ ۱] این خط را برای بررسی وضعیت DEBUG اضافه می‌کنیم vvvvvv
+print(f"--- SETTINGS CHECK --- DEBUG IS CURRENTLY: {DEBUG} ---")
 
-# [CONFIGURED] Read ALLOWED_HOSTS from environment variables
 ALLOWED_HOSTS_str = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_str.split(',') if host.strip()]
 
@@ -48,6 +49,9 @@ INSTALLED_APPS = [
     'orders',
     'wallets',
     'contracts',
+    'surveys',
+    'discounts', 
+
 ]
 
 # ==================== Middleware ====================
@@ -92,19 +96,14 @@ LOGOUT_REDIRECT_URL = '/'
 
 
 # ==================== Database ====================
-# Option 1: Try to build the database URL from individual environment variables (Ideal for Darkube)
+# (بخش دیتابیس بدون تغییر)
 DB_HOST = os.environ.get('DB_HOST')
 DB_NAME = os.environ.get('DB_NAME')
 DB_USER = os.environ.get('DB_USER')
 DB_PASS = os.environ.get('DB_PASS')
 DB_PORT = os.environ.get('DB_PORT')
-
-# Option 2: Check for a single DATABASE_URL variable
 DATABASE_URL = os.environ.get('DATABASE_URL')
-
-# Logic to choose the database configuration
 if DB_HOST and DB_NAME and DB_USER and DB_PASS and DB_PORT:
-    print("Connecting to PostgreSQL via individual DB environment variables.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -116,12 +115,10 @@ if DB_HOST and DB_NAME and DB_USER and DB_PASS and DB_PORT:
         }
     }
 elif DATABASE_URL:
-    print("Connecting to PostgreSQL database via DATABASE_URL.")
     DATABASES = {
         'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600, ssl_require=False)
     }
 else:
-    print("No production database environment variables found. Falling back to SQLite for local development.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -135,25 +132,17 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER  = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = False # Set to True if your proxy handles SSL termination
+    SECURE_SSL_REDIRECT = False
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-# ==================== REST Framework ====================
+# ==================== REST Framework & JWT ====================
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated',],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',],
 }
-
-# ==================== Simple JWT ====================
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -162,12 +151,8 @@ SIMPLE_JWT = {
 # ==================== CORS ====================
 CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://ehsan-restaurant.nilva.ai,https://ehsan-front-temp.darkube.app')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_str.split(',') if origin.strip()]
-
 CSRF_TRUSTED_ORIGINS_str = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173,https://ehsan-restaurant.nilva.ai,https://ehsan-front-temp.darkube.app')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_str.split(',') if origin.strip()]
-
-# CORS_ALLOW_ALL_ORIGINS=True 
-
 CORS_ALLOW_CREDENTIALS=True
 
 # ==================== Static & Media ====================
@@ -177,50 +162,23 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'mediafiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ==================== Internationalization ====================
+# vvvvvv [دیباگ ۲] این خط را برای بررسی مسیر فیزیکی فایل‌ها اضافه می‌کنیم vvvvvv
+print(f"--- SETTINGS CHECK --- MEDIA_ROOT PATH IS: {MEDIA_ROOT} ---")
+
+# ==================== Internationalization & Other Settings ====================
 LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'UTC'
 USE_I18N = True 
 USE_TZ = True
 LOCALE_PATHS = [BASE_DIR / 'locale']
-
-# ==================== Default Primary Key Field ====================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# ==================== Custom Settings ====================
 RESERVATION_LEAD_DAYS = 1
-
-# ==================== Logging ====================
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
+    'version': 1, 'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
+        'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{',},
+        'simple': {'format': '{levelname} {message}', 'style': '{',},
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',  
-    },
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose',},},
+    'root': {'handlers': ['console'], 'level': 'INFO',},
 }
-
-
-# ==================== DEBUGGING CODE ====================
-print("--- [CORS DEBUG] ---")
-cors_env_var = os.environ.get('CORS_ALLOWED_ORIGINS')
-print(f"[*] Value from ENV VAR 'CORS_ALLOWED_ORIGINS': {cors_env_var}")
-print(f"[*] Final calculated 'CORS_ALLOWED_ORIGINS' list: {CORS_ALLOWED_ORIGINS}")
-print(f"[*] Middleware list: {[m.split('.')[-1] for m in MIDDLEWARE]}")
-print("--- [END CORS DEBUG] ---")
