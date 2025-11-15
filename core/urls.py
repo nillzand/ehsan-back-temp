@@ -1,14 +1,12 @@
 # ehsan-back-temp/core/urls.py
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path  # <--- re_path را اضافه کنید و path را نگه دارید
 from django.conf.urls.static import static
 
-# JWT imports
 from rest_framework_simplejwt.views import TokenRefreshView
 from users.auth_views import MyTokenObtainPairView
 
-# Local imports
 from . import urls_admin
 from .views import welcome
 
@@ -19,8 +17,8 @@ urlpatterns = [
     path('api/admin/', include(urls_admin)),
     path('api/auth/', include('rest_framework.urls')),
     
-    # [مهم] این خط باید وجود داشته باشد و درخواست POST را مدیریت می‌کند
-    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # [اصلاح کلیدی] استفاده از re_path برای پذیرش URL با و بدون اسلش پایانی
+    re_path(r'^api/token/?$', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('users.urls')),
