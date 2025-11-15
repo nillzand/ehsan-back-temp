@@ -1,8 +1,8 @@
-# core/urls.py
+# ehsan-back-temp/core/urls.py
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include, re_path  # ۱. re_path را اضافه کنید
-from django.views.static import serve         # ۲. serve را اضافه کنید
+from django.urls import path, include
+from django.conf.urls.static import static
 
 # JWT imports
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -15,10 +15,13 @@ from .views import welcome
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # مسیرهای اصلی API شما (بدون تغییر)
+    # مسیرهای اصلی API
     path('api/admin/', include(urls_admin)),
     path('api/auth/', include('rest_framework.urls')),
+    
+    # [مهم] این خط باید وجود داشته باشد و درخواست POST را مدیریت می‌کند
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('users.urls')),
     path('api/companies/', include('companies.urls')),
@@ -30,11 +33,6 @@ urlpatterns = [
     path('', welcome, name='api-welcome'),
 ]
 
-# ۳. [اصلاح کلیدی] این بخش را جایگزین بلوک if settings.DEBUG قبلی کنید
-# این کد به طور صریح به جنگو می‌گوید که فایل‌های media را در حالت توسعه سرو کند
+# سرو کردن فایل‌های مدیا در حالت DEBUG
 if settings.DEBUG:
-    urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', serve, {
-            'document_root': settings.MEDIA_ROOT,
-        }),
-    ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
