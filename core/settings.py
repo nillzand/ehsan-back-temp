@@ -141,6 +141,7 @@ LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+APPEND_SLASH = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 RESERVATION_LEAD_DAYS = 1
