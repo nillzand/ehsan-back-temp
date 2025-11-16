@@ -18,7 +18,7 @@ urlpatterns = [
     path('api/auth/', include('rest_framework.urls')),
     
     # [اصلاح کلیدی] استفاده از re_path برای پذیرش URL با و بدون اسلش پایانی
-    re_path(r'^api/token/?$', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('users.urls')),
