@@ -1,4 +1,5 @@
 # back/menu/serializers.py
+
 from rest_framework import serializers
 from .models import FoodCategory, FoodItem, SideDish
 from django.utils import timezone
@@ -31,29 +32,13 @@ class FoodItemSerializer(serializers.ModelSerializer):
         }
 
     def get_image_url(self, obj):
-        # [دیباگ] شروع فرآیند ساخت URL برای تصویر
-        print(f"\n--- [DEBUG] Processing image for FoodItem ID: {obj.id} ({obj.name}) ---")
-        
+        # --- [اصلاح] --- تمام دستورات print حذف شدند
         request = self.context.get('request')
         
-        # [دیباگ] بررسی وجود آبجکت تصویر و درخواست
-        if not obj.image:
-            print("[DEBUG] -> obj.image is None. No image file is associated with this item in the database.")
-            return None
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
         
-        print(f"[DEBUG] -> obj.image exists. Value: {obj.image}")
-        print(f"[DEBUG] -> obj.image.url: {obj.image.url}")
-
-        if not request:
-            print("[DEBUG] -> 'request' is NOT in serializer context. Cannot build absolute URL.")
-            return obj.image.url # بازگرداندن URL نسبی
-
-        # ساخت URL کامل
-        absolute_url = request.build_absolute_uri(obj.image.url)
-        print(f"[DEBUG] -> Final absolute URL generated: {absolute_url}")
-        print("--- [END DEBUG] ---")
-        
-        return absolute_url
+        return None
 
     def _get_active_discount(self, obj):
         now = timezone.now()

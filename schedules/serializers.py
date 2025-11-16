@@ -1,4 +1,5 @@
 # back/schedules/serializers.py
+
 from rest_framework import serializers
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -9,7 +10,6 @@ from users.models import User
 
 def _apply_company_pricing(original_price: Decimal, company: Company | None) -> Decimal:
     if not company:
-        # اگر شرکتی وجود نداشت، قیمت اصلی را بدون اعشار برمی‌گردانیم
         return original_price.quantize(Decimal('1'))
 
     if company.calculation_type == Company.CalculationType.AVERAGE and company.average_price > 0:
@@ -19,7 +19,6 @@ def _apply_company_pricing(original_price: Decimal, company: Company | None) -> 
         
     final_price = base_price
     
-    # اعمال تخفیف شرکت
     if company.discount_type != Company.DiscountType.NONE and company.discount_value > 0:
         discount_value = company.discount_value
         if company.discount_type == Company.DiscountType.FIXED:
@@ -28,18 +27,10 @@ def _apply_company_pricing(original_price: Decimal, company: Company | None) -> 
             discount_multiplier = Decimal('1') - (discount_value / Decimal('100'))
             final_price = base_price * discount_multiplier
 
-    # اعمال منطق رند کردن فقط برای تخفیف درصدی
     if company.discount_type == Company.DiscountType.PERCENTAGE and company.rounding_amount != Company.RoundingAmount.NONE:
-        rounding_map = {
-            'HUNDRED': Decimal('100'),
-            'FIVE_HUNDRED': Decimal('500'),
-            'THOUSAND': Decimal('1000'),
-        }
-        # اگر هر نوع رند کردنی انتخاب شده بود، همیشه به نزدیک‌ترین ۱۰۰۰ رند می‌کنیم
         rounding_base = Decimal('1000')
         final_price = (final_price / rounding_base).to_integral_value(rounding=ROUND_HALF_UP) * rounding_base
 
-    # [اصلاح کلیدی] اطمینان از اینکه خروجی همیشه یک عدد صحیح و بدون اعشار است
     return final_price.quantize(Decimal('1'))
 
 
@@ -72,6 +63,7 @@ class DailyMenuReadSerializer(serializers.ModelSerializer):
         processed_food_data = []
 
         for food in foods:
+            # مهم: context به صورت دستی به FoodItemSerializer پاس داده می‌شود
             serialized_food = FoodItemSerializer(food, context=self.context).data
             
             true_original_price = food.price
@@ -89,7 +81,8 @@ class DailyMenuReadSerializer(serializers.ModelSerializer):
 
 class ScheduleSerializer(serializers.ModelSerializer):
     company_name = serializers.SerializerMethodField()
-    daily_menus = DailyMenuReadSerializer(many=True, read_only=True)
+    # --- [اصلاح کلیدی ۱] --- فیلد daily_menus را به SerializerMethodField تغییر می‌دهیم
+    daily_menus = serializers.SerializerMethodField()
 
     class Meta:
         model = Schedule
@@ -98,3 +91,15 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     def get_company_name(self, obj: Schedule):
         return obj.company.name if obj.company else None
+        
+    # --- [اصلاح کلیدی ۲] --- متد جدید برای سریالایز کردن daily_menus اضافه می‌شود
+    def get_daily_menus(self, obj: Schedule):
+        """
+        این متد به ما اجازه می‌دهد تا context را به صورت دستی به سریالایزر فرزند پاس دهیم.
+        """
+        serializer = DailyMenuReadSerializer(
+            obj.daily_menus.all(), 
+            many=True, 
+            context=self.context  # مهم‌ترین بخش: پاس دادن context
+        )
+        return serializer.data
