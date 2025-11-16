@@ -1,4 +1,4 @@
-# back/menu/serializers.py (نسخه موقت برای دیباگ)
+# back/menu/serializers.py (نسخه نهایی و پاک‌سازی شده)
 
 from rest_framework import serializers
 from .models import FoodCategory, FoodItem, SideDish
@@ -32,26 +32,20 @@ class FoodItemSerializer(serializers.ModelSerializer):
         }
 
     def get_image_url(self, obj):
-        # --- [تغییر کلیدی برای تست] ---
-        # به طور موقت ساختن URL را غیرفعال می‌کنیم تا ببینیم آیا خطا از اینجاست یا نه
-        return None 
-        # ---------------------------
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url') and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None
 
-        # request = self.context.get('request')
-        # if obj.image and hasattr(obj.image, 'url') and request:
-        #     return request.build_absolute_uri(obj.image.url)
-        # return None
-
-    # ... بقیه متدهای این کلاس بدون تغییر باقی می‌مانند ...
     def _get_active_discount(self, obj):
         now = timezone.now()
-        discount = obj.dynamic_discounts.filter(
-            is_active=True,
-            start_date__lte=now,
-        ).filter(
-            models.Q(end_date__gte=now) | models.Q(end_date__isnull=True)
-        ).first()
-        return discount
+        # به دلیل prefetch، این بخش دیگر به دیتابیس درخواست نمی‌زند
+        for discount in obj.dynamic_discounts.all():
+            if (discount.is_active and 
+                discount.start_date <= now and 
+                (discount.end_date is None or discount.end_date >= now)):
+                return discount
+        return None
 
     def get_discount_percentage(self, obj):
         discount = self._get_active_discount(obj)

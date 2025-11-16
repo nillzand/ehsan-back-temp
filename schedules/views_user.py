@@ -1,8 +1,11 @@
-# back/schedules/views_user.py (نسخه نهایی و بهینه شده)
+# back/schedules/views_user.py (نسخه نهایی با هر دو بهینه‌سازی)
 
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
-from .models import Schedule
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Prefetch  # ایمپورت کردن Prefetch
+from .models import Schedule, DailyMenu
 from .serializers import ScheduleSerializer
 from users.models import User 
 from companies.models import Company
@@ -12,10 +15,6 @@ class MyCompanyMenuView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_context(self):
-        """
-        Passes the correct company context to the serializer for accurate pricing.
-        A Super Admin can specify a company, otherwise the user's own company is used.
-        """
         context = super().get_serializer_context()
         context['request'] = self.request
         user = self.request.user
@@ -29,7 +28,6 @@ class MyCompanyMenuView(generics.ListAPIView):
                     target_company = Company.objects.get(pk=company_id)
                 except Company.DoesNotExist:
                     pass
-        
         elif user.company:
             target_company = user.company
 
@@ -37,10 +35,6 @@ class MyCompanyMenuView(generics.ListAPIView):
         return context
 
     def get_queryset(self):
-        """
-        Returns the active schedule for the user's company.
-        This version is optimized to prevent the N+1 query problem.
-        """
         user = self.request.user
         target_company = None
 
@@ -59,12 +53,22 @@ class MyCompanyMenuView(generics.ListAPIView):
             active_schedule = Schedule.objects.filter(company__isnull=True, is_active=True).first()
             
         if active_schedule:
-            # --- [اصلاح کلیدی] ---
-            # ما به جنگو می‌گوییم که تمام تخفیف‌های مربوط به تمام غذاهای این منو را
-            # به صورت یکجا و بهینه واکشی کند.
-            return Schedule.objects.filter(pk=active_schedule.pk).select_related('company').prefetch_related(
-                'daily_menus__available_foods__dynamic_discounts', # این خط مشکل را حل می‌کند
-                'daily_menus__available_sides'
+            # --- [اصلاح کلیدی و نهایی] ---
+            # ۱. تعریف بازه زمانی محدود برای جلوگیری از Timeout
+            today = timezone.now().date()
+            start_range = today - timedelta(days=7)
+            end_range = today + timedelta(days=30)
+
+            # ۲. ساخت یک prefetch سفارشی برای فیلتر کردن daily_menus در سطح دیتابیس
+            filtered_daily_menus = Prefetch(
+                'daily_menus',
+                queryset=DailyMenu.objects.filter(date__range=(start_range, end_range)).prefetch_related(
+                    'available_foods__dynamic_discounts',
+                    'available_sides'
+                )
             )
+
+            # ۳. اجرای کوئری نهایی با تمام بهینه‌سازی‌ها
+            return Schedule.objects.filter(pk=active_schedule.pk).select_related('company').prefetch_related(filtered_daily_menus)
         
         return Schedule.objects.none()
