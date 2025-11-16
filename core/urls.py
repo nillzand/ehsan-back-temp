@@ -1,27 +1,24 @@
 # ehsan-back-temp/core/urls.py
+
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include, re_path  # <--- re_path را اضافه کنید و path را نگه دارید
+from django.urls import path, include
 from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import TokenRefreshView
-from users.auth_views import MyTokenObtainPairView
+# --- [اصلاح ۱] --- ایمپورت کردن View سفارشی
+from users.auth_views import MyTokenObtainPairView 
 
 from . import urls_admin
 from .views import welcome
-# [اصلاح کلیدی] استفاده از re_path برای پذیرش URL با و بدون اسلش پایانی
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    # مسیرهای اصلی API
     path('api/admin/', include(urls_admin)),
     path('api/auth/', include('rest_framework.urls')),
     
-
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-
+    # --- [اصلاح ۲] --- استفاده از MyTokenObtainPairView به جای نسخه پیش‌فرض
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('users.urls')),
@@ -34,6 +31,5 @@ urlpatterns = [
     path('', welcome, name='api-welcome'),
 ]
 
-# سرو کردن فایل‌های مدیا در حالت DEBUG
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

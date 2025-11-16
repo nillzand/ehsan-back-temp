@@ -79,14 +79,21 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-# ... (بقیه سریالایزرها بدون تغییر)
+# --- سریالایزر برای تخصیص بودجه ---
 class AllocateBudgetSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
 
+
+# --- سریالایزر سفارشی برای ایجاد توکن JWT ---
+# این بخش مهم‌ترین قسمت برای حل مشکل شماست.
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
+        # ابتدا توکن استاندارد را از کلاس والد می‌گیریم
         token = super().get_token(user)
+        
+        # سپس فیلدهای سفارشی خود را به payload توکن اضافه می‌کنیم
         token['username'] = user.username
         token['role'] = user.role
+        
         return token
