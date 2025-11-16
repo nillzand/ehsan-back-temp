@@ -1,4 +1,4 @@
-# back/menu/serializers.py
+# back/menu/serializers.py (نسخه پاک‌سازی شده)
 
 from rest_framework import serializers
 from .models import FoodCategory, FoodItem, SideDish
@@ -17,7 +17,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     
     discount_percentage = serializers.SerializerMethodField()
-    discounted_price = serializers.SerializerMethodField()
+    discounted_price = serializers.SerializerMethodField() # این قیمت خام با تخفیف داینامیک است
 
     class Meta:
         model = FoodItem
@@ -32,16 +32,14 @@ class FoodItemSerializer(serializers.ModelSerializer):
         }
 
     def get_image_url(self, obj):
-        # --- [اصلاح] --- تمام دستورات print حذف شدند
         request = self.context.get('request')
-        
-        if obj.image and request:
+        if obj.image and hasattr(obj.image, 'url') and request:
             return request.build_absolute_uri(obj.image.url)
-        
         return None
 
     def _get_active_discount(self, obj):
         now = timezone.now()
+        # ... (بقیه کد این متد بدون تغییر)
         discount = obj.dynamic_discounts.filter(
             is_active=True,
             start_date__lte=now,

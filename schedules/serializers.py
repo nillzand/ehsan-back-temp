@@ -1,4 +1,4 @@
-# back/schedules/serializers.py
+# back/schedules/serializers.py (نسخه نهایی و بازبینی شده)
 
 from rest_framework import serializers
 from decimal import Decimal, ROUND_HALF_UP
@@ -8,6 +8,7 @@ from menu.serializers import FoodItemSerializer, SideDishSerializer
 from companies.models import Company
 from users.models import User
 
+# ... تابع _apply_company_pricing بدون تغییر باقی می‌ماند ...
 def _apply_company_pricing(original_price: Decimal, company: Company | None) -> Decimal:
     if not company:
         return original_price.quantize(Decimal('1'))
@@ -45,44 +46,46 @@ class DailyMenuWriteSerializer(serializers.ModelSerializer):
         return value
 
 class DailyMenuReadSerializer(serializers.ModelSerializer):
-    available_foods = serializers.SerializerMethodField()
+    # --- [اصلاح ۱] --- available_foods را به یک سریالایزر مستقیم تغییر می‌دهیم
+    # این کار انتقال context را خودکار می‌کند و از خطای انسانی جلوگیری می‌کند.
+    available_foods = FoodItemSerializer(many=True, read_only=True)
     available_sides = SideDishSerializer(many=True, read_only=True)
 
     class Meta:
         model = DailyMenu
         fields = ['id', 'date', 'available_foods', 'available_sides']
-
-    def get_available_foods(self, obj: DailyMenu):
-        company_for_pricing = self.context.get('company_for_pricing')
         
+    # --- [اصلاح ۲] --- منطق قیمت‌گذاری را به to_representation منتقل می‌کنیم
+    # این متد در انتهای فرآیند سریالایز اجرا می‌شود و به ما اجازه می‌دهد قیمت‌ها را دستکاری کنیم.
+    def to_representation(self, instance):
+        # ابتدا داده‌های استاندارد را با context صحیح دریافت می‌کنیم
+        data = super().to_representation(instance)
+        
+        company_for_pricing = self.context.get('company_for_pricing')
         user = self.context.get('request').user
         if user and user.role == User.Role.SUPER_ADMIN:
-            company_for_pricing = obj.schedule.company
+            company_for_pricing = instance.schedule.company
 
-        foods = obj.available_foods.all()
-        processed_food_data = []
-
-        for food in foods:
-            # مهم: context به صورت دستی به FoodItemSerializer پاس داده می‌شود
-            serialized_food = FoodItemSerializer(food, context=self.context).data
+        # حالا قیمت‌ها را در داده‌های سریالایز شده تغییر می‌دهیم
+        for food_data in data.get('available_foods', []):
+            original_price = Decimal(food_data['price'])
+            # قیمت با تخفیف داینامیک از قبل در discounted_price محاسبه شده
+            price_after_dynamic_discount = Decimal(food_data['discounted_price'])
             
-            true_original_price = food.price
-            price_after_dynamic_discount = Decimal(serialized_food['discounted_price'])
-            
+            # قیمت نهایی را با توجه به تنظیمات شرکت محاسبه می‌کنیم
             final_price = _apply_company_pricing(price_after_dynamic_discount, company_for_pricing)
             
-            serialized_food['price'] = f"{true_original_price:.2f}"
-            serialized_food['discounted_price'] = f"{final_price:.2f}"
+            # قیمت‌ها را در خروجی نهایی بازنویسی می‌کنیم
+            food_data['price'] = f"{original_price:.2f}" # قیمت اصلی برای نمایش (مثلاً خط خورده)
+            food_data['discounted_price'] = f"{final_price:.2f}" # قیمت نهایی برای نمایش به کاربر
             
-            processed_food_data.append(serialized_food)
-
-        return processed_food_data
+        return data
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
     company_name = serializers.SerializerMethodField()
-    # --- [اصلاح کلیدی ۱] --- فیلد daily_menus را به SerializerMethodField تغییر می‌دهیم
-    daily_menus = serializers.SerializerMethodField()
+    # --- [اصلاح ۳] --- از سریالایزر مستقیم استفاده می‌کنیم تا context به صورت خودکار منتقل شود.
+    daily_menus = DailyMenuReadSerializer(many=True, read_only=True)
 
     class Meta:
         model = Schedule
@@ -91,15 +94,3 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     def get_company_name(self, obj: Schedule):
         return obj.company.name if obj.company else None
-        
-    # --- [اصلاح کلیدی ۲] --- متد جدید برای سریالایز کردن daily_menus اضافه می‌شود
-    def get_daily_menus(self, obj: Schedule):
-        """
-        این متد به ما اجازه می‌دهد تا context را به صورت دستی به سریالایزر فرزند پاس دهیم.
-        """
-        serializer = DailyMenuReadSerializer(
-            obj.daily_menus.all(), 
-            many=True, 
-            context=self.context  # مهم‌ترین بخش: پاس دادن context
-        )
-        return serializer.data
