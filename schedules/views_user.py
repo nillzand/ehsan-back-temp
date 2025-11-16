@@ -1,4 +1,5 @@
-# back/schedules/views_user.py
+# back/schedules/views_user.py (نسخه نهایی و بهینه شده)
+
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
 from .models import Schedule
@@ -21,17 +22,14 @@ class MyCompanyMenuView(generics.ListAPIView):
         
         target_company = None
         
-        # If the user is a Super Admin, they can view the menu of any company
-        # by providing a 'company_id' in the query parameters.
         if user.role == User.Role.SUPER_ADMIN:
             company_id = self.request.query_params.get('company_id')
             if company_id:
                 try:
                     target_company = Company.objects.get(pk=company_id)
                 except Company.DoesNotExist:
-                    pass  # Let get_queryset handle the 404 or empty response
+                    pass
         
-        # For any other user (like Company Admin or Employee), use their own company.
         elif user.company:
             target_company = user.company
 
@@ -41,8 +39,7 @@ class MyCompanyMenuView(generics.ListAPIView):
     def get_queryset(self):
         """
         Returns the active schedule for the user's company.
-        A Super Admin can specify a company_id to see a specific company's menu.
-        If a company has no specific active schedule, it falls back to the default schedule.
+        This version is optimized to prevent the N+1 query problem.
         """
         user = self.request.user
         target_company = None
@@ -50,28 +47,24 @@ class MyCompanyMenuView(generics.ListAPIView):
         if user.role == User.Role.SUPER_ADMIN:
             company_id = self.request.query_params.get('company_id')
             if company_id:
-                # Super Admin is requesting a specific company's menu
                 target_company = get_object_or_404(Company, pk=company_id)
         elif user.company:
-            # Regular user (Employee or Company Admin)
             target_company = user.company
 
         if not target_company:
-            # If no company can be determined, return no schedules.
             return Schedule.objects.none()
 
-        # Find the active schedule for the target company.
         active_schedule = target_company.active_schedule
         if not active_schedule:
-            # If the company has no specific schedule, find the active default schedule.
             active_schedule = Schedule.objects.filter(company__isnull=True, is_active=True).first()
             
         if active_schedule:
-            # Return a queryset containing only the determined active schedule.
+            # --- [اصلاح کلیدی] ---
+            # ما به جنگو می‌گوییم که تمام تخفیف‌های مربوط به تمام غذاهای این منو را
+            # به صورت یکجا و بهینه واکشی کند.
             return Schedule.objects.filter(pk=active_schedule.pk).select_related('company').prefetch_related(
-                'daily_menus__available_foods',
+                'daily_menus__available_foods__dynamic_discounts', # این خط مشکل را حل می‌کند
                 'daily_menus__available_sides'
             )
         
-        # If no active schedule is found at all, return an empty queryset.
         return Schedule.objects.none()
