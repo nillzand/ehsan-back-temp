@@ -9,6 +9,8 @@ from users.auth_views import MyTokenObtainPairView
 
 from . import urls_admin
 from .views import welcome
+# [اصلاح کلیدی] استفاده از re_path برای پذیرش URL با و بدون اسلش پایانی
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,8 +19,9 @@ urlpatterns = [
     path('api/admin/', include(urls_admin)),
     path('api/auth/', include('rest_framework.urls')),
     
-    # [اصلاح کلیدی] استفاده از re_path برای پذیرش URL با و بدون اسلش پایانی
-    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+
     
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('users.urls')),
